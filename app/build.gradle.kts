@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.devtools.ksp") version "2.0.0-1.0.21"
     alias(libs.plugins.kotlin.compose)
 }
 
@@ -42,9 +43,13 @@ android {
 }
 
 dependencies {
+    val roomVersion = "2.6.1"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    ksp("androidx.room:room-compiler:$roomVersion")
+
     implementation("io.coil-kt:coil-compose:2.7.0") // Camara de fotos
     implementation("androidx.navigation:navigation-compose:2.9.5") // Navegacion
-    implementation("androidx.datastore:datastore-preferences:1.1.1") // Almacenamiento de preferencias
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)

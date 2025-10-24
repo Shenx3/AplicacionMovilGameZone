@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import android.util.Patterns
-import com.example.gamezone.data.CredentialsRepo
 
 /**
  * Define el estado de los campos de entrada de la pantalla de Registro.

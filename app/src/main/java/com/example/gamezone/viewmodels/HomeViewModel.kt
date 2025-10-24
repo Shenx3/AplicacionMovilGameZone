@@ -1,7 +1,6 @@
 package com.example.gamezone.viewmodels
 
 import androidx.lifecycle.ViewModel
-import com.example.gamezone.data.CredentialsRepo
 import com.example.gamezone.data.FeaturedProducts
 import com.example.gamezone.data.Product
 import kotlinx.coroutines.flow.MutableStateFlow
