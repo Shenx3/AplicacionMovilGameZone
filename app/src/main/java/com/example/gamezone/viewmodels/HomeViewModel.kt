@@ -7,6 +7,11 @@ import com.example.gamezone.data.Product
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.net.Uri // <<< NUEVO IMPORT
+import com.example.gamezone.data.PhotoPrefsRepo // <<< NUEVO IMPORT
+import kotlinx.coroutines.flow.first // <<< NUEVO IMPORT
+import android.content.Context // <<< NUEVO IMPORT
+import androidx.core.net.toUri // <<< NUEVO IMPORT
 
 // Nuevo Data Class para exponer la información del usuario logueado
 data class UserProfile(
@@ -21,6 +26,29 @@ class HomeViewModel : ViewModel() {
     // Estado para el perfil del usuario (tomado del CredentialsRepo)
     private val _userProfile = MutableStateFlow(loadProfile())
     val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
+
+    // Estado para la foto de perfil
+    private val _photoUri = MutableStateFlow<Uri?>(null)
+    val photoUri: StateFlow<Uri?> = _photoUri.asStateFlow()
+
+    /**
+     * Guarda el Uri en el ViewModel y en DataStore (persistencia).
+     */
+    suspend fun setPhotoUri(context: Context, uri: Uri?) {
+        val uriString = uri?.toString()
+        PhotoPrefsRepo.setPhotoUriString(context, uriString) // GUARDAR EN DISCO
+        _photoUri.value = uri
+    }
+
+    /**
+     * Carga el Uri desde DataStore si no está en memoria.
+     */
+    suspend fun loadPhotoUri(context: Context) {
+        if (_photoUri.value == null) {
+            val uriString = PhotoPrefsRepo.photoUriStringFlow(context).first()
+            _photoUri.value = uriString?.toUri()
+        }
+    }
 
     private fun loadProfile(): UserProfile {
         // En una aplicación real, se cargaría el perfil completo desde la red o Room.

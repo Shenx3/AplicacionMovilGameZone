@@ -49,7 +49,7 @@ class LoginViewModel : ViewModel() {
             _state.update { it.copy(isLoading = true, loginError = null) }
 
             // SIMULACIÓN DE RED
-            delay(1000) // Retardo de 1 segundo
+            delay(3000) // Retardo de 3 segundos
 
             // 2. Validación de credenciales
             val loginSuccessful = CredentialsRepo.checkCredentials(

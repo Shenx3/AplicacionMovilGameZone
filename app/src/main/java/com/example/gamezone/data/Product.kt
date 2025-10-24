@@ -9,8 +9,7 @@ data class Product(
     val title: String,
     val description: String,
     val price: String,
-    // imageResId simulará la referencia a la imagen local (ej: R.drawable.godofwar)
-    // Para esta demo, usaremos un ID genérico ya que no tenemos las imágenes en Drawables
+    // imageResId simula la referencia a la imagen local (ej: R.drawable.godofwar)
     val imageResId: Int = 0
 )
 
@@ -18,11 +17,12 @@ data class Product(
  * Simulación de datos para la vista principal.
  */
 val FeaturedProducts = listOf(
-    Product(
-        id = 1,
-        title = "God of War I",
-        description = "Una épica aventura de acción protagonizada por Kratos en su misión de venganza contra los dioses griegos.",
-        price = "$32.990",
+    Product( // Simulamos productos destacados
+        id = 1, // Id único del producto
+        title = "God of War I", // Título del producto
+        description = "Una épica aventura de acción protagonizada por Kratos en su misión de venganza contra los dioses griegos.", // Descripción del producto
+        price = "$32.990", // Precio del producto
+        // imageResId = R.drawable.godofwar // Referencia a la imagen local (drawable)
     ),
     Product(
         id = 2,

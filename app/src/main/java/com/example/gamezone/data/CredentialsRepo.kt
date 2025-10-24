@@ -33,7 +33,7 @@ object CredentialsRepo {
         return userMatch && passwordMatch
     }
 
-    fun getCurrentUser(): String? {
+    fun getCurrentUser(): String? { // Devuelve el usuario actual
         // Devolvemos el identificador guardado (que es el email o 'sys')
         return savedUser
     }

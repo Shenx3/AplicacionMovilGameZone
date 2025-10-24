@@ -10,7 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape // <-- IMPORTANTE PARA EL CÍRCULO
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -18,7 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip // <-- IMPORTANTE PARA EL CÍRCULO
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -28,11 +28,12 @@ import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import com.example.gamezone.viewmodels.HomeViewModel
 import com.example.gamezone.viewmodels.UserProfile
-import androidx.lifecycle.viewmodel.compose.viewModel // <-- IMPORT NECESARIO
+import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.launch // Importante para scope.launch
 
 /**
  * Vista para capturar una foto de perfil y mostrar los datos del usuario.
@@ -43,20 +44,31 @@ fun CameraView(
     vm: HomeViewModel = viewModel() // Usamos HomeViewModel para obtener el perfil
 ) {
     val context = LocalContext.current
-    val userProfile = vm.userProfile.collectAsState().value // <-- DATOS DEL USUARIO
+    val userProfile = vm.userProfile.collectAsState().value
+    val photoUriState = vm.photoUri.collectAsState().value
 
-    // Estado: permiso, Uri actual del archivo para capturar, y Uri de la última foto tomada
+    val scope = rememberCoroutineScope()
+
+    // Estado: permiso, Uri actual del archivo para capturar
     var hasCameraPermission by rememberSaveable { mutableStateOf(false) }
     var pendingImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
-    var lastPhotoUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
+
+    // Cargar URI persistida de DataStore al iniciar la vista
+    LaunchedEffect(Unit) {
+        vm.loadPhotoUri(context)
+    }
 
     // 1) Launcher para TakePicture
     val takePictureLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            lastPhotoUri = pendingImageUri
+            // <<< CÓDIGO MODIFICADO: ENVOLVER LLAMADA SUSPEND EN scope.launch {} >>>
+            scope.launch {
+                vm.setPhotoUri(context, pendingImageUri)
+            }
+            // <<< FIN CÓDIGO MODIFICADO >>>
         } else {
             pendingImageUri = null
         }
@@ -99,7 +111,7 @@ fun CameraView(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 // 1. FOTO DE PERFIL CIRCULAR
-                ProfilePicture(lastPhotoUri)
+                ProfilePicture(photoUriState)
 
                 // 2. DATOS DEL USUARIO
                 Column {
@@ -142,6 +154,7 @@ fun CameraView(
 
 @Composable
 fun ProfilePicture(uri: Uri?) {
+// ... (sin cambios)
     val size = 96.dp
 
     Card(

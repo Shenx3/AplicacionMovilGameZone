@@ -4,9 +4,9 @@ package com.example.gamezone.navigation
  * Define las rutas de navegación para toda la aplicación.
  */
 sealed class Route(val route: String) {
-    data object Welcome : Route("welcome")
-    data object Login : Route("login")
-    data object Register : Route("register")
+    data object Welcome : Route("welcome") // Vista de bienvenida
+    data object Login : Route("login") // Vista de inicio de sesión
+    data object Register : Route("register") // Vista de registro
 
     // Contenedor principal después del login (que tendrá el menú interno Home/Camera)
     data object MenuShell : Route("menu_shell")
