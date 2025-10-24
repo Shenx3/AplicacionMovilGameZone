@@ -1,12 +1,15 @@
 package com.example.gamezone.viewmodels
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope // <-- IMPORT NECESARIO
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.delay // <-- IMPORT NECESARIO
-import kotlinx.coroutines.launch // <-- IMPORT NECESARIO
+import com.example.gamezone.data.AppDatabase // Importar DB
+import com.example.gamezone.SessionManager // Importar SessionManager
+import android.content.Context // Necesario para acceder a la base de datos
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Representa el estado actual de la UI de Login.
@@ -14,7 +17,7 @@ import kotlinx.coroutines.launch // <-- IMPORT NECESARIO
 data class LoginState(
     val emailOrUsername: String = "",
     val password: String = "",
-    val isLoading: Boolean = false, // <-- REINTRODUCIDO
+    val isLoading: Boolean = false,
     val loginError: String? = null
 )
 
@@ -31,9 +34,9 @@ class LoginViewModel : ViewModel() {
     }
 
     /**
-     * Lógica de inicio de sesión asíncrona con simulación de retardo.
+     * Lógica de inicio de sesión asíncrona con Room.
      */
-    fun login(onSuccess: () -> Unit) {
+    fun login(context: Context, onSuccess: () -> Unit) {
         val currentState = _state.value
 
         // Validación de campos vacíos
@@ -42,27 +45,33 @@ class LoginViewModel : ViewModel() {
             return
         }
 
-        // Lanzar la operación de red en una corrutina
+        // Lanzar la operación de base de datos en una corrutina
         viewModelScope.launch {
             // 1. Iniciar la carga
             _state.update { it.copy(isLoading = true, loginError = null) }
+            delay(500) // Simulación de retardo de red/DB
 
-            // SIMULACIÓN DE RED
-            delay(3000) // Retardo de 3 segundos
+            val userDao = AppDatabase.getDatabase(context).userDao()
+            val identifier = currentState.emailOrUsername
 
-            // 2. Validación de credenciales
-            val loginSuccessful = CredentialsRepo.checkCredentials(
-                userAttempt = currentState.emailOrUsername,
-                passwordAttempt = currentState.password
-            )
+            // 2. Buscar usuario por email o nombre de usuario
+            val user = userDao.findUserByIdentifier(identifier)
 
-            if (loginSuccessful) {
-                // Éxito
+            if (user == null) {
+                // Usuario no encontrado
+                _state.update { it.copy(isLoading = false, loginError = "Credenciales incorrectas. Usuario no registrado.") }
+                return@launch
+            }
+
+            // 3. Verificar contraseña
+            if (user.contrasena == currentState.password) {
+                // Éxito: Guardar sesión y notificar
+                SessionManager.currentUserId = user.id // Guardar ID de sesión
                 _state.update { it.copy(isLoading = false) }
                 onSuccess()
             } else {
-                // Error
-                _state.update { it.copy(isLoading = false, loginError = "Credenciales incorrectas. El usuario no está registrado o la contraseña es inválida.") }
+                // Error: Contraseña inválida
+                _state.update { it.copy(isLoading = false, loginError = "Contraseña incorrecta.") }
             }
         }
     }

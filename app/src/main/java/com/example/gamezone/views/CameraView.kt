@@ -33,7 +33,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.launch // Importante para scope.launch
+import kotlinx.coroutines.launch
 
 /**
  * Vista para capturar una foto de perfil y mostrar los datos del usuario.
@@ -41,22 +41,21 @@ import kotlinx.coroutines.launch // Importante para scope.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraView(
-    vm: HomeViewModel = viewModel() // Usamos HomeViewModel para obtener el perfil
+    vm: HomeViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val userProfile = vm.userProfile.collectAsState().value
     val photoUriState = vm.photoUri.collectAsState().value
-
     val scope = rememberCoroutineScope()
 
     // Estado: permiso, Uri actual del archivo para capturar
     var hasCameraPermission by rememberSaveable { mutableStateOf(false) }
     var pendingImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
-
-    // Cargar URI persistida de DataStore al iniciar la vista
+    // MODIFICADO: Cargar el perfil (incluyendo la foto) al iniciar la vista.
+    // Esto se ejecuta en cada navegación a CameraView.
     LaunchedEffect(Unit) {
-        vm.loadPhotoUri(context)
+        vm.loadProfile(context)
     }
 
     // 1) Launcher para TakePicture
@@ -64,11 +63,10 @@ fun CameraView(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
-            // <<< CÓDIGO MODIFICADO: ENVOLVER LLAMADA SUSPEND EN scope.launch {} >>>
+            // CÓDIGO MODIFICADO: Envolver LLAMADA SUSPEND en scope.launch {}
             scope.launch {
                 vm.setPhotoUri(context, pendingImageUri)
             }
-            // <<< FIN CÓDIGO MODIFICADO >>>
         } else {
             pendingImageUri = null
         }
@@ -154,14 +152,13 @@ fun CameraView(
 
 @Composable
 fun ProfilePicture(uri: Uri?) {
-// ... (sin cambios)
     val size = 96.dp
 
     Card(
-        shape = CircleShape, // <-- Aplica la forma circular
+        shape = CircleShape,
         modifier = Modifier
             .size(size)
-            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape), // Borde púrpura
+            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape),
     ) {
         if (uri != null) {
             AsyncImage(

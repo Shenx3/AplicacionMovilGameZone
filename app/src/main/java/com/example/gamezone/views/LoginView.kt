@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -30,6 +31,7 @@ fun LoginView(
     var passwordVisible by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current // <<< OBTENER CONTEXTO
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
@@ -104,7 +106,7 @@ fun LoginView(
 
             // BOTÓN INGRESAR CON INDICADOR DE CARGA
             Button(
-                onClick = { vm.login(onLoginSuccess) },
+                onClick = { vm.login(context, onLoginSuccess) }, // <<< PASAR CONTEXTO
                 enabled = !state.isLoading, // <-- DESHABILITADO durante la carga
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {

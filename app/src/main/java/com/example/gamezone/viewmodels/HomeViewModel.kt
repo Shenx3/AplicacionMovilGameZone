@@ -6,56 +6,74 @@ import com.example.gamezone.data.Product
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import android.net.Uri // <<< NUEVO IMPORT
-import com.example.gamezone.data.PhotoPrefsRepo // <<< NUEVO IMPORT
-import kotlinx.coroutines.flow.first // <<< NUEVO IMPORT
-import android.content.Context // <<< NUEVO IMPORT
-import androidx.core.net.toUri // <<< NUEVO IMPORT
+import android.net.Uri
+import android.content.Context
+import androidx.core.net.toUri
+import com.example.gamezone.data.AppDatabase
+import com.example.gamezone.SessionManager
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
-// Nuevo Data Class para exponer la información del usuario logueado
+// Data Class para exponer la información del usuario logueado
 data class UserProfile(
     val username: String = "",
     val email: String = ""
 )
 
 class HomeViewModel : ViewModel() {
-    private val _products = MutableStateFlow(FeaturedProducts)
-    val products: StateFlow<List<Product>> = _products
+    // Los productos se importan automáticamente de data/Product.kt
+    private val _products = MutableStateFlow(FeaturedProducts) // ERROR CORREGIDO AQUÍ
+    val products: StateFlow<List<Product>> = _products.asStateFlow()
 
-    // Estado para el perfil del usuario (tomado del CredentialsRepo)
-    private val _userProfile = MutableStateFlow(loadProfile())
+    // Estado para el perfil del usuario
+    private val _userProfile = MutableStateFlow(UserProfile())
     val userProfile: StateFlow<UserProfile> = _userProfile.asStateFlow()
 
-    // Estado para la foto de perfil
+    // Estado para la foto de perfil (se actualiza desde la DB)
     private val _photoUri = MutableStateFlow<Uri?>(null)
     val photoUri: StateFlow<Uri?> = _photoUri.asStateFlow()
 
     /**
-     * Guarda el Uri en el ViewModel y en DataStore (persistencia).
+     * Carga el perfil del usuario (incluyendo la foto) desde la base de datos.
      */
-    suspend fun setPhotoUri(context: Context, uri: Uri?) {
-        val uriString = uri?.toString()
-        PhotoPrefsRepo.setPhotoUriString(context, uriString) // GUARDAR EN DISCO
-        _photoUri.value = uri
-    }
+    fun loadProfile(context: Context) {
+        viewModelScope.launch {
+            val userId = SessionManager.currentUserId
 
-    /**
-     * Carga el Uri desde DataStore si no está en memoria.
-     */
-    suspend fun loadPhotoUri(context: Context) {
-        if (_photoUri.value == null) {
-            val uriString = PhotoPrefsRepo.photoUriStringFlow(context).first()
-            _photoUri.value = uriString?.toUri()
+            if (userId != null) {
+                val userDao = AppDatabase.getDatabase(context).userDao()
+                val user = userDao.getUserById(userId)
+
+                if (user != null) {
+                    _userProfile.value = UserProfile(
+                        username = user.nombreUsuario,
+                        email = user.email
+                    )
+                    // Convertir la String Uri de la DB a Uri para mostrar
+                    _photoUri.value = user.profilePhotoUri?.toUri()
+                }
+            } else {
+                // Si no hay sesión, usa el perfil por defecto
+                _userProfile.value = UserProfile("Invitado", "N/A")
+                _photoUri.value = null
+            }
         }
     }
 
-    private fun loadProfile(): UserProfile {
-        // En una aplicación real, se cargaría el perfil completo desde la red o Room.
-        // Aquí usamos el CredentialsRepo para simular el usuario logueado.
-        val user = CredentialsRepo.getCurrentUser() ?: "Usuario Desconocido"
-        val email = if (user.contains("@")) user else "N/A"
-        val username = if (user.contains("@")) "Usuario" else user
+    /**
+     * Guarda la Uri de la foto en la base de datos para el usuario logueado.
+     */
+    suspend fun setPhotoUri(context: Context, uri: Uri?) {
+        val userId = SessionManager.currentUserId
+        if (userId != null) {
+            val userDao = AppDatabase.getDatabase(context).userDao()
+            val user = userDao.getUserById(userId)
 
-        return UserProfile(username, email)
+            if (user != null) {
+                val updatedUser = user.copy(profilePhotoUri = uri?.toString())
+                userDao.updateUser(updatedUser) // Guardar en DB
+                _photoUri.value = uri // Actualizar en ViewModel
+            }
+        }
     }
 }

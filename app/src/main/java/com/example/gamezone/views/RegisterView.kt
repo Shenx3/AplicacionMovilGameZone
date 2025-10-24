@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext // <<< IMPORTADO
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -31,6 +32,7 @@ fun RegisterView(
     val errors = vm.errors.collectAsState().value
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current // <<< OBTENER CONTEXTO
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -202,7 +204,7 @@ fun RegisterView(
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        vm.register {
+                        vm.register(context) { // <<< PASAR CONTEXTO
                             scope.launch {
                                 snackbarHostState.showSnackbar("¡Cuenta creada exitosamente!")
                             }

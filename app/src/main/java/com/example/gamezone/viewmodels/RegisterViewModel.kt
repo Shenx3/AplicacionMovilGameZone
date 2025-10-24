@@ -5,6 +5,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import android.util.Patterns
+import com.example.gamezone.data.User
+import com.example.gamezone.data.AppDatabase
+import android.content.Context
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 /**
  * Define el estado de los campos de entrada de la pantalla de Registro.
@@ -69,7 +74,7 @@ class RegisterViewModel : ViewModel() {
         val s = _state.value
         var currentErrors = RegisterErrors()
 
-        // 1. Nombre Completo (Requerido por la imagen)
+        // 1. Nombre Completo
         currentErrors = if (s.nombreCompleto.length < 3) {
             currentErrors.copy(nombreCompleto = "El nombre debe tener al menos 3 caracteres.")
         } else {
@@ -85,7 +90,7 @@ class RegisterViewModel : ViewModel() {
 
         // 3. Nombre de Usuario
         currentErrors = when {
-            s.nombreUsuario.length !in 3..20 -> currentErrors.copy(nombreUsuario = "Debe tener entre 3 y 20 caracteres (letras, números o guiones).")
+            s.nombreUsuario.length !in 3..20 -> currentErrors.copy(nombreUsuario = "Debe tener entre 3 y 20 caracteres.")
             else -> currentErrors.copy(nombreUsuario = null)
         }
 
@@ -104,7 +109,7 @@ class RegisterViewModel : ViewModel() {
             else -> currentErrors.copy(confirmarContrasena = null)
         }
 
-        // 6. Preferencia (Género) - Haremos que sea obligatorio en esta demo
+        // 6. Preferencia (Género)
         currentErrors = if (s.generoFavorito.isBlank()) {
             currentErrors.copy(generoFavorito = "Selecciona un género favorito.")
         } else {
@@ -125,21 +130,53 @@ class RegisterViewModel : ViewModel() {
             currentErrors.generoFavorito, currentErrors.aceptaTerminos).all { it == null }
     }
 
-    // Simulación de registro
-    fun register(onSuccess: () -> Unit) {
+    /**
+     * Intenta registrar al usuario en la base de datos.
+     * @param context El contexto de la aplicación para acceder a la DB.
+     * @param onSuccess Callback a ejecutar si el registro es exitoso.
+     */
+    fun register(context: Context, onSuccess: () -> Unit) {
         if (validate()) {
+            // CORRECCIÓN APLICADA: Solo actualiza isLoading en _state.
             _state.update { it.copy(isLoading = true) }
+            _errors.update { it.copy(generalError = null) } // Limpiar el error general anterior.
 
-            // 1. GUARDAR CREDENCIALES: Usamos el EMAIL como identificador principal para el Login.
-            CredentialsRepo.saveCredentials(
-                user = _state.value.email,
-                password = _state.value.contrasena
-            )
+            viewModelScope.launch {
+                val s = _state.value
+                val userDao = AppDatabase.getDatabase(context).userDao()
 
-            // Simular un envío exitoso
-            onSuccess()
-            _state.update { it.copy(isLoading = false) }
-            reset() // Limpia el formulario después del registro
+                // Crear la nueva entidad User para la DB
+                val newUser = User(
+                    nombreCompleto = s.nombreCompleto,
+                    email = s.email,
+                    telefono = s.telefono.ifBlank { null },
+                    nombreUsuario = s.nombreUsuario,
+                    contrasena = s.contrasena,
+                    generoFavorito = s.generoFavorito
+                    // profilePhotoUri se deja como null por defecto
+                )
+
+                try {
+                    // 1. Verificar si el email o nombre de usuario ya existen (mejorar la UX)
+                    val existingUser = userDao.findUserByIdentifier(s.email)
+                    if (existingUser != null) {
+                        _errors.update { it.copy(generalError = "El email ya está registrado.") }
+                        _state.update { it.copy(isLoading = false) }
+                        return@launch
+                    }
+
+                    // 2. Insertar en la DB
+                    userDao.insertUser(newUser)
+
+                    // 3. Éxito
+                    onSuccess()
+                    reset() // Limpia el formulario después del registro
+                } catch (e: Exception) {
+                    _errors.update { it.copy(generalError = "Error de registro: ${e.message}") }
+                }
+
+                _state.update { it.copy(isLoading = false) }
+            }
         } else {
             _errors.update { it.copy(generalError = "Revisa los campos con errores.") }
         }
