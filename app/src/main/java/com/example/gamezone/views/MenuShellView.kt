@@ -16,7 +16,8 @@ import com.example.gamezone.navigation.Route
 
 @Composable
 fun MenuShellView(
-    showLoginSuccessSnackbar: Boolean
+    showLoginSuccessSnackbar: Boolean,
+    onLogout: () -> Unit // <--- NUEVO PARÁMETRO
 ) {
     val innerNavController = rememberNavController()
     val currentRoute = currentInnerRoute(innerNavController)
@@ -65,7 +66,7 @@ fun MenuShellView(
                 HomeView(showLoginSuccessSnackbar = showLoginSuccessSnackbar)
             }
             composable(Route.Camera.route) {
-                CameraView()
+                CameraView(onLogout = onLogout) // <--- PASAR CALLBACK
             }
         }
     }

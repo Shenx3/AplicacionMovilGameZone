@@ -49,7 +49,7 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             // 1. Iniciar la carga
             _state.update { it.copy(isLoading = true, loginError = null) }
-            delay(500) // Simulación de retardo de red/DB
+            delay(3000) // Simulación de retardo de red/DB
 
             val userDao = AppDatabase.getDatabase(context).userDao()
             val identifier = currentState.emailOrUsername

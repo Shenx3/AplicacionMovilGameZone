@@ -41,7 +41,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CameraView(
-    vm: HomeViewModel = viewModel()
+    vm: HomeViewModel = viewModel(),
+    onLogout: () -> Unit
 ) {
     val context = LocalContext.current
     val userProfile = vm.userProfile.collectAsState().value
@@ -123,18 +124,24 @@ fun CameraView(
                         color = Color.LightGray
                     )
                     Spacer(Modifier.height(8.dp))
+
+                    // --- LÓGICA DEL BOTÓN: CAMBIAR TEXTO DINÁMICAMENTE ---
                     Button(
                         onClick = {
                             if (hasCameraPermission) {
+                                // Si ya tiene permiso, lanza la cámara directamente
                                 launchCamera(context) { takePictureLauncher.launch(it) }
                             } else {
+                                // Si no tiene permiso, lo solicita primero
                                 permissionLauncher.launch(Manifest.permission.CAMERA)
                             }
                         },
                         modifier = Modifier.height(30.dp)
                     ) {
-                        Text("Tomar Foto", style = MaterialTheme.typography.labelMedium)
+                        val buttonText = if (photoUriState != null) "Cambiar Foto" else "Tomar Foto" // <--- CAMBIO AQUÍ
+                        Text(buttonText, style = MaterialTheme.typography.labelMedium)
                     }
+                    // --- FIN LÓGICA DEL BOTÓN ---
                 }
             }
             // --- FIN BLOQUE DE PERFIL ---
@@ -146,6 +153,22 @@ fun CameraView(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 16.dp)
             )
+
+            // --- BOTÓN CERRAR SESIÓN ---
+            Spacer(Modifier.weight(1f)) // Empuja el botón al final
+            Button(
+                onClick = {
+                    vm.logout() // 1. Limpia la sesión en el ViewModel
+                    onLogout() // 2. Ejecuta el callback de navegación
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text("Cerrar Sesión", style = MaterialTheme.typography.titleMedium)
+            }
+            // --- FIN BOTÓN CERRAR SESIÓN ---
         }
     }
 }

@@ -77,7 +77,19 @@ class MainActivity : ComponentActivity() {
 
                             // MenuShellView contiene la navegación interna (Home y Camera)
                             MenuShellView(
-                                showLoginSuccessSnackbar = showSnackbar
+                                showLoginSuccessSnackbar = showSnackbar,
+                                onLogout = { // <--- LÓGICA DE LOGOUT
+                                    // Limpiar el ID de la sesión (redundante, pero seguro)
+                                    SessionManager.currentUserId = null
+
+                                    // Navegar a la pantalla de bienvenida y eliminar toda la pila de navegación
+                                    navController.navigate(Route.Welcome.route) {
+                                        // Esto asegura que el usuario no pueda volver al menú con el botón 'atrás'
+                                        popUpTo(navController.graph.id) {
+                                            inclusive = true
+                                        }
+                                    }
+                                }
                             )
                         }
                     }

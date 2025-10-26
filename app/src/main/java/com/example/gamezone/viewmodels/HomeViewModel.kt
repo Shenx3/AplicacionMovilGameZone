@@ -76,4 +76,11 @@ class HomeViewModel : ViewModel() {
             }
         }
     }
+
+    /**
+     * Cierra la sesión del usuario.
+     */
+    fun logout() {
+        SessionManager.currentUserId = null // Limpiar el ID de la sesión
+    }
 }
