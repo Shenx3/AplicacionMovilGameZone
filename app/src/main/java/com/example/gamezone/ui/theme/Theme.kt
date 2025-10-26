@@ -33,7 +33,6 @@ private val LightColorScheme = lightColorScheme(
     secondary = PurpleGrey40,
     tertiary = Pink40
 
-    /* Otros colores por defecto para el tema claro */
 )
 
 @Composable

@@ -53,7 +53,7 @@ fun CameraView(
     var hasCameraPermission by rememberSaveable { mutableStateOf(false) }
     var pendingImageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
 
-    // MODIFICADO: Cargar el perfil (incluyendo la foto) al iniciar la vista.
+    // Cargar el perfil (incluyendo la foto) al iniciar la vista.
     // Esto se ejecuta en cada navegación a CameraView.
     LaunchedEffect(Unit) {
         vm.loadProfile(context)

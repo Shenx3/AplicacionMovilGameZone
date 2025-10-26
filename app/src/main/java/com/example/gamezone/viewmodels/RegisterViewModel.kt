@@ -130,11 +130,7 @@ class RegisterViewModel : ViewModel() {
             currentErrors.generoFavorito, currentErrors.aceptaTerminos).all { it == null }
     }
 
-    /**
-     * Intenta registrar al usuario en la base de datos.
-     * @param context El contexto de la aplicación para acceder a la DB.
-     * @param onSuccess Callback a ejecutar si el registro es exitoso.
-     */
+
     fun register(context: Context, onSuccess: () -> Unit) {
         if (validate()) {
             // CORRECCIÓN APLICADA: Solo actualiza isLoading en _state.

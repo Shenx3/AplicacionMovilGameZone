@@ -17,7 +17,7 @@ import com.example.gamezone.ui.theme.GameZoneTheme
 import com.example.gamezone.views.LoginView
 import com.example.gamezone.views.RegisterView
 import com.example.gamezone.views.WelcomeView
-import com.example.gamezone.views.MenuShellView // <-- NUEVO IMPORT
+import com.example.gamezone.views.MenuShellView
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
