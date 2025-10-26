@@ -43,14 +43,19 @@ fun GameZoneTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    // Forzar darkTheme a 'true'
+    val forceDarkTheme = true
+
     val colorScheme = when {
+        // Se mantiene la opción de Dynamic Color si se desea, pero forzando la versión oscura
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            // Nota: Aquí el tema dinámico mantiene la preferencia de color del sistema (oscuro/claro)
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            // Usamos forceDarkTheme para seleccionar la rama del esquema oscuro
+            if (forceDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
 
-        darkTheme -> DarkColorScheme
+        // Si no hay Dynamic Color, usamos DarkColorScheme
+        forceDarkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
