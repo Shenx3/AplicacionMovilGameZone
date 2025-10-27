@@ -8,6 +8,9 @@ sealed class Route(val route: String) {
     data object Login : Route("login") // Vista de inicio de sesión
     data object Register : Route("register") // Vista de registro
 
+    data object Forgot : Route("forgot")  // Recuperar contraseña
+
+
     // Contenedor principal después del login (que tendrá el menú interno Home/Camera)
     data object MenuShell : Route("menu_shell")
 

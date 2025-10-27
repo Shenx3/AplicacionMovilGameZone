@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.gamezone.navigation.Route
 import com.example.gamezone.ui.theme.GameZoneTheme
+import com.example.gamezone.views.ForgotPasswordView
 import com.example.gamezone.views.LoginView
 import com.example.gamezone.views.RegisterView
 import com.example.gamezone.views.WelcomeView
@@ -39,18 +40,34 @@ class MainActivity : ComponentActivity() {
                             )
                         }
 
-                        // PANTALLA DE LOGIN
+                        // LOGIN
                         composable(Route.Login.route) {
                             LoginView(
                                 onLoginSuccess = {
-                                    // Navegamos a MenuShell y pasamos el argumento 'showSnackbar=true'
-                                    navController.navigate(Route.HomeWithArgs.build(true)) { // <-- RUTA MODIFICADA
+                                    navController.navigate(Route.HomeWithArgs.build(true)) {
                                         popUpTo(Route.Login.route) { inclusive = true }
                                     }
                                 },
-                                onRegisterClick = { navController.navigate(Route.Register.route) }
+                                onRegisterClick = { navController.navigate(Route.Register.route) },
+                                onForgotClick = { navController.navigate(Route.Forgot.route) } // ← nuevo
                             )
                         }
+
+                        // FORGOT
+                        composable(Route.Forgot.route) {
+                            ForgotPasswordView(
+                                onBack = { navController.popBackStack() },
+                                onResetSuccess = {
+                                    navController.navigate(Route.Login.route) {
+                                        popUpTo(Route.Login.route) { inclusive = true }
+                                    }
+                                }
+                            )
+                        }
+
+
+
+
 
                         // PANTALLA DE REGISTRO
                         composable(Route.Register.route) {

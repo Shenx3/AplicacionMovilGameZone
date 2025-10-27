@@ -25,7 +25,8 @@ import kotlinx.coroutines.launch
 fun LoginView(
     vm: LoginViewModel = viewModel(),
     onLoginSuccess: () -> Unit,
-    onRegisterClick: () -> Unit
+    onRegisterClick: () -> Unit,
+    onForgotClick: () -> Unit
 ) {
     val state = vm.state.collectAsState().value
     var passwordVisible by remember { mutableStateOf(false) }
@@ -131,8 +132,9 @@ fun LoginView(
                 Text(
                     text = "¿Olvidaste tu contraseña?",
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable(enabled = !state.isLoading) { /* Acción */ }
+                    modifier = Modifier.clickable(enabled = !state.isLoading) { onForgotClick() }
                 )
+
             }
 
             Row(
