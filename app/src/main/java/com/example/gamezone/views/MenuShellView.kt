@@ -4,41 +4,60 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.gamezone.navigation.Route
+import com.example.gamezone.viewmodels.CartViewModel
 
 @Composable
 fun MenuShellView(
     showLoginSuccessSnackbar: Boolean,
-    onLogout: () -> Unit // <--- NUEVO PARÁMETRO
+    onLogout: () -> Unit
 ) {
     val innerNavController = rememberNavController()
     val currentRoute = currentInnerRoute(innerNavController)
+
+    // 1. INSTANCIA COMPARTIDA: Se crea el ViewModel aquí.
+    val cartVm: CartViewModel = viewModel()
 
     // Usaremos Scaffold para contener la Bottom Bar y el NavHost
     Scaffold(
         bottomBar = {
             NavigationBar {
-                // Item Home
+                // Item Home (Tienda)
                 NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Home, contentDescription = "Home") },
+                    icon = { Icon(Icons.Filled.Home, contentDescription = "Tienda") },
                     label = { Text("Tienda") },
                     selected = currentRoute == Route.Home.route,
                     onClick = {
                         innerNavController.navigate(Route.Home.route) {
-                            // Limpia el back stack si es necesario
                             popUpTo(innerNavController.graph.startDestinationId)
                             launchSingleTop = true
                         }
                     }
                 )
+
+                // Item Carrito
+                NavigationBarItem(
+                    icon = { Icon(Icons.Filled.ShoppingCart, contentDescription = "Carrito") },
+                    label = { Text("Carrito") },
+                    selected = currentRoute == Route.Cart.route,
+                    onClick = {
+                        innerNavController.navigate(Route.Cart.route) {
+                            popUpTo(innerNavController.graph.startDestinationId)
+                            launchSingleTop = true
+                        }
+                    }
+                )
+
                 // Item Cámara/Perfil
                 NavigationBarItem(
                     icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
@@ -57,25 +76,29 @@ fun MenuShellView(
         // NavHost interno para las opciones del menú
         NavHost(
             navController = innerNavController,
-            // Si el login es exitoso, navegamos al Home, si no, al Home directamente
             startDestination = Route.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
             composable(Route.Home.route) {
-                // Pasamos el argumento del Snackbar a HomeView
-                HomeView(showLoginSuccessSnackbar = showLoginSuccessSnackbar)
+                // 2. Pasar la instancia compartida a HomeView
+                HomeView(
+                    showLoginSuccessSnackbar = showLoginSuccessSnackbar,
+                    cartVm = cartVm
+                )
+            }
+            composable(Route.Cart.route) {
+                // 3. Pasar la instancia compartida a CartView
+                CartView(vm = cartVm)
             }
             composable(Route.Camera.route) {
-                CameraView(onLogout = onLogout) // <--- PASAR CALLBACK
+                CameraView(onLogout = onLogout)
             }
         }
     }
 
     // Lanzamos el efecto de Snackbar si se recibió el argumento.
-    // Esto se hace aquí para que HomeView pueda ejecutar LaunchedEffect con showLoginSuccessSnackbar.
     LaunchedEffect(key1 = showLoginSuccessSnackbar) {
         if (showLoginSuccessSnackbar) {
-            // Reiniciamos el argumento para que no se muestre al rotar/volver
             innerNavController.currentBackStackEntry?.arguments?.putBoolean("showSnackbar", false)
         }
     }

@@ -20,6 +20,7 @@ import com.example.gamezone.viewmodels.HomeViewModel
 import com.example.gamezone.data.Product
 import com.example.gamezone.R
 import androidx.compose.material3.ExperimentalMaterial3Api
+import com.example.gamezone.viewmodels.CartViewModel
 import kotlinx.coroutines.launch
 
 /**
@@ -29,26 +30,26 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeView(
     vm: HomeViewModel = viewModel(),
-    showLoginSuccessSnackbar: Boolean,
-    onProductClick: (Int) -> Unit = {}
+    cartVm: CartViewModel, // Nuevo ViewModel inyectado
+    showLoginSuccessSnackbar: Boolean
 ) {
     val products = vm.products.collectAsState().value
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
     // ESTADO LOCAL: Bandera para asegurar que el mensaje solo se muestre una vez.
-    var hasShownSnackbar by rememberSaveable { mutableStateOf(false) } // <-- CONTROL DE REPETICIÓN
+    var hasShownSnackbar by rememberSaveable { mutableStateOf(false) }
 
     // EFECTO LANZADO: Muestra el Snackbar solo si el login fue exitoso Y NO se ha mostrado antes.
     LaunchedEffect(showLoginSuccessSnackbar) {
-        if (showLoginSuccessSnackbar && !hasShownSnackbar) { // <-- SOLO SE EJECUTA SI ES TRUE Y NO SE HA MOSTRADO
+        if (showLoginSuccessSnackbar && !hasShownSnackbar) {
             scope.launch {
                 snackbarHostState.showSnackbar(
                     message = "Iniciaste sesión correctamente.",
                     duration = SnackbarDuration.Short
                 )
             }
-            hasShownSnackbar = true // <-- Marcar como mostrado
+            hasShownSnackbar = true
         }
     }
 
@@ -90,15 +91,23 @@ fun HomeView(
 
             // Grid de Productos
             items(products) { product ->
-                ProductCard(product = product, onClick = { onProductClick(product.id) })
+                ProductCard(
+                    product = product,
+                    onAddToCart = {
+                        cartVm.addToCart(product) // Llama a la lógica de añadir al carrito
+                        scope.launch {
+                            snackbarHostState.showSnackbar("¡${product.title} añadido al carrito!")
+                        }
+                    }
+                )
             }
         }
     }
 }
 
-// La función ProductCard permanece sin cambios.
+// La función ProductCard se modifica para recibir la acción de añadir al carrito.
 @Composable
-fun ProductCard(product: Product, onClick: () -> Unit) {
+fun ProductCard(product: Product, onAddToCart: () -> Unit) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -146,7 +155,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
             )
 
             Button(
-                onClick = onClick,
+                onClick = onAddToCart, // Uso de la acción de añadir al carrito
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)

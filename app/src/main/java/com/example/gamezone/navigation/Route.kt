@@ -1,3 +1,4 @@
+// shenx3/aplicacionmovilgamezone/AplicacionMovilGameZone-ab2e394e829aae548b64d43d1f9a81e7c3d94284/app/src/main/java/com/example/gamezone/navigation/Route.kt
 package com.example.gamezone.navigation
 
 /**
@@ -16,7 +17,8 @@ sealed class Route(val route: String) {
 
     // Rutas internas de MenuShell
     data object Home : Route("home") // El Home actual
-    data object Camera : Route("camera") // La nueva vista de Cámara
+    data object Camera : Route("camera") // vista de Cámara
+    data object Cart : Route("cart") // Ruta del carrito
 
     // HOME ahora acepta un argumento opcional: showSnackbar
     data object HomeWithArgs : Route("menu_shell?showSnackbar={showSnackbar}") {
