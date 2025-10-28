@@ -108,7 +108,6 @@ fun HomeView(
     }
 }
 
-// La función ProductCard se modifica para recibir la acción de añadir al carrito.
 @Composable
 fun ProductCard(product: Product, onAddToCart: () -> Unit) {
     ElevatedCard(
@@ -122,10 +121,8 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
                 .padding(12.dp)
         ) {
 
-            // --- ESTE ES EL CAMBIO PRINCIPAL ---
-            // Reemplazamos el 'Box' y el 'Icon' por 'AsyncImage' de Coil
             AsyncImage(
-                model = product.imageUrl, // Carga la URL desde tu modelo de datos
+                model = product.imageUrl, // Carga la URL desde el modelo de datos
                 contentDescription = product.title,
                 contentScale = ContentScale.Crop, // Escala la imagen para llenar el espacio
                 modifier = Modifier
