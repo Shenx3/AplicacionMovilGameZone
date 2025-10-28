@@ -38,3 +38,7 @@
 * **Android Studio**
 * **JDK 11** o superior
 * **SDK Android**: `compileSdk` 36, `minSdk` 33.
+
+### ✨ Integrantes del Equipo
+* **Adrian Diaz**
+* **Bastián Bravo**
