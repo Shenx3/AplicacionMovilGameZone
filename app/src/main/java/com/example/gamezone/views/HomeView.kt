@@ -22,6 +22,9 @@ import com.example.gamezone.R
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.example.gamezone.viewmodels.CartViewModel
 import kotlinx.coroutines.launch
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.clip
 
 /**
  * Pantalla principal de GameZone mostrando Productos Destacados.
@@ -111,26 +114,26 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Max)
+            .height(IntrinsicSize.Max) // Esto permite que la tarjeta se ajuste al contenido
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
-            Box(
+
+            // --- ESTE ES EL CAMBIO PRINCIPAL ---
+            // Reemplazamos el 'Box' y el 'Icon' por 'AsyncImage' de Coil
+            AsyncImage(
+                model = product.imageUrl, // Carga la URL desde tu modelo de datos
+                contentDescription = product.title,
+                contentScale = ContentScale.Crop, // Escala la imagen para llenar el espacio
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                    contentDescription = product.title,
-                    modifier = Modifier.size(80.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+                    .height(180.dp) // Damos una altura fija a la imagen
+                    .clip(MaterialTheme.shapes.medium) // Redondea las esquinas
+            )
+            // --- FIN DEL CAMBIO ---
 
             Spacer(Modifier.height(8.dp))
 
@@ -146,7 +149,7 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
                 maxLines = 3
             )
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(1f)) // Empuja el precio y el botón hacia abajo
 
             Text(
                 text = product.price,
@@ -155,7 +158,7 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
             )
 
             Button(
-                onClick = onAddToCart, // Uso de la acción de añadir al carrito
+                onClick = onAddToCart,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)
