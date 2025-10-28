@@ -1,5 +1,11 @@
 package com.example.gamezone.views
 
+// --- CAMBIO 1: Añade estas importaciones para la animación del título ---
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+// -----------------------------------------------------------------
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -10,7 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -23,8 +31,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import com.example.gamezone.viewmodels.CartViewModel
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.material3.rememberTopAppBarState
 
 /**
  * Pantalla principal de GameZone mostrando Productos Destacados.
@@ -33,17 +41,15 @@ import androidx.compose.ui.draw.clip
 @Composable
 fun HomeView(
     vm: HomeViewModel = viewModel(),
-    cartVm: CartViewModel, // Nuevo ViewModel inyectado
+    cartVm: CartViewModel,
     showLoginSuccessSnackbar: Boolean
 ) {
     val products = vm.products.collectAsState().value
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // ESTADO LOCAL: Bandera para asegurar que el mensaje solo se muestre una vez.
     var hasShownSnackbar by rememberSaveable { mutableStateOf(false) }
 
-    // EFECTO LANZADO: Muestra el Snackbar solo si el login fue exitoso Y NO se ha mostrado antes.
     LaunchedEffect(showLoginSuccessSnackbar) {
         if (showLoginSuccessSnackbar && !hasShownSnackbar) {
             scope.launch {
@@ -56,12 +62,37 @@ fun HomeView(
         }
     }
 
+    // (Mantenemos el comportamiento de scroll)
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
+
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("GameZone", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
+                // --- CAMBIO 2: Lógica del Título ---
+                title = {
+                    // Usamos AnimatedVisibility para mostrar/ocultar el título
+                    AnimatedVisibility(
+                        // Solo será visible si la fracción de colapso es 0 (arriba del todo)
+                        visible = scrollBehavior.state.collapsedFraction == 0f,
+                        enter = fadeIn(), // Animación de entrada
+                        exit = fadeOut()  // Animación de salida
+                    ) {
+                        Text(
+                            "GameZone",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                },
+                // (Mantenemos la transparencia)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    scrolledContainerColor = Color.Transparent
+                ),
+                // (Mantenemos la animación de la barra)
+                scrollBehavior = scrollBehavior
             )
         }
     ) { paddingValues ->
@@ -97,7 +128,7 @@ fun HomeView(
                 ProductCard(
                     product = product,
                     onAddToCart = {
-                        cartVm.addToCart(product) // Llama a la lógica de añadir al carrito
+                        cartVm.addToCart(product)
                         scope.launch {
                             snackbarHostState.showSnackbar("¡${product.title} añadido al carrito!")
                         }
@@ -108,29 +139,28 @@ fun HomeView(
     }
 }
 
+// (La función ProductCard no necesita cambios)
 @Composable
 fun ProductCard(product: Product, onAddToCart: () -> Unit) {
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Max) // Esto permite que la tarjeta se ajuste al contenido
+            .height(IntrinsicSize.Max)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(12.dp)
         ) {
-
             AsyncImage(
-                model = product.imageUrl, // Carga la URL desde el modelo de datos
+                model = product.imageUrl,
                 contentDescription = product.title,
-                contentScale = ContentScale.Crop, // Escala la imagen para llenar el espacio
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(180.dp) // Damos una altura fija a la imagen
-                    .clip(MaterialTheme.shapes.medium) // Redondea las esquinas
+                    .height(180.dp)
+                    .clip(MaterialTheme.shapes.medium)
             )
-            // --- FIN DEL CAMBIO ---
 
             Spacer(Modifier.height(8.dp))
 
@@ -146,7 +176,7 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
                 maxLines = 3
             )
 
-            Spacer(Modifier.weight(1f)) // Empuja el precio y el botón hacia abajo
+            Spacer(Modifier.weight(1f))
 
             Text(
                 text = product.price,
