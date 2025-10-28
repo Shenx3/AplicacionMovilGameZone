@@ -10,6 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +34,9 @@ fun CartView(
     val state = vm.state.collectAsState().value
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    // Estado local para la carga de la compra
+    var isPurchasing by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -53,7 +60,6 @@ fun CartView(
                     Text("Tu carrito está vacío. ¡Añade algunos juegos! 🛒", style = MaterialTheme.typography.titleMedium)
                 }
             } else {
-                // Lista de items
                 LazyColumn(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -65,7 +71,6 @@ fun CartView(
                     }
                 }
 
-                // Resumen del total
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -88,20 +93,33 @@ fun CartView(
                             )
                         }
 
-                        // Botón de Comprar
                         Button(
                             onClick = {
-                                val finalTotal = state.totalAmount
-                                vm.clearCart() // Vaciar el carrito
                                 scope.launch {
+                                    isPurchasing = true
+                                    delay(1000) // Simula la compra durante 1 segundo
+                                    val finalTotal = state.totalAmount
+                                    vm.clearCart() // Vaciar el carrito
                                     snackbarHostState.showSnackbar("¡Compra realizada con éxito! Total pagado: $finalTotal ✅")
+                                    isPurchasing = false // Termina la carga
                                 }
                             },
+                            enabled = !isPurchasing, // Deshabilita el botón mientras carga
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(48.dp)
                         ) {
-                            Text("Confirmar Compra", style = MaterialTheme.typography.titleMedium)
+                            if (isPurchasing) {
+                                // Muestra el indicador de carga
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                            } else {
+                                // Muestra el texto normal
+                                Text("Confirmar Compra", style = MaterialTheme.typography.titleMedium)
+                            }
                         }
                     }
                 }

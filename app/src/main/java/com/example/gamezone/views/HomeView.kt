@@ -1,11 +1,8 @@
 package com.example.gamezone.views
 
-// --- CAMBIO 1: Añade estas importaciones para la animación del título ---
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-// -----------------------------------------------------------------
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -33,6 +30,7 @@ import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.rememberTopAppBarState
+import kotlinx.coroutines.delay
 
 /**
  * Pantalla principal de GameZone mostrando Productos Destacados.
@@ -62,7 +60,6 @@ fun HomeView(
         }
     }
 
-    // (Mantenemos el comportamiento de scroll)
     val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
@@ -70,14 +67,11 @@ fun HomeView(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
-                // --- CAMBIO 2: Lógica del Título ---
                 title = {
-                    // Usamos AnimatedVisibility para mostrar/ocultar el título
                     AnimatedVisibility(
-                        // Solo será visible si la fracción de colapso es 0 (arriba del todo)
                         visible = scrollBehavior.state.collapsedFraction == 0f,
-                        enter = fadeIn(), // Animación de entrada
-                        exit = fadeOut()  // Animación de salida
+                        enter = fadeIn(),
+                        exit = fadeOut()
                     ) {
                         Text(
                             "GameZone",
@@ -86,12 +80,10 @@ fun HomeView(
                         )
                     }
                 },
-                // (Mantenemos la transparencia)
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,
                     scrolledContainerColor = Color.Transparent
                 ),
-                // (Mantenemos la animación de la barra)
                 scrollBehavior = scrollBehavior
             )
         }
@@ -104,7 +96,6 @@ fun HomeView(
             modifier = Modifier.padding(horizontal = 16.dp)
         ) {
 
-            // Encabezado con descripción de la tienda
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Column(Modifier.padding(top = 8.dp, bottom = 16.dp)) {
                     Text(
@@ -123,7 +114,6 @@ fun HomeView(
                 }
             }
 
-            // Grid de Productos
             items(products) { product ->
                 ProductCard(
                     product = product,
@@ -139,9 +129,12 @@ fun HomeView(
     }
 }
 
-// (La función ProductCard no necesita cambios)
 @Composable
 fun ProductCard(product: Product, onAddToCart: () -> Unit) {
+    // Estado local para la carga de este botón
+    var isLoading by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+
     ElevatedCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -185,12 +178,30 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
             )
 
             Button(
-                onClick = onAddToCart,
+                onClick = {
+                    scope.launch {
+                        isLoading = true
+                        onAddToCart() // Llama a la lógica original (VM + Snackbar)
+                        delay(500) // Simula una carga corta
+                        isLoading = false
+                    }
+                },
+                enabled = !isLoading, // El botón se deshabilita mientras carga
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp)
             ) {
-                Text("Añadir al carrito", style = MaterialTheme.typography.labelLarge)
+                if (isLoading) {
+                    // Muestra el indicador de carga
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    // Muestra el texto normal
+                    Text("Añadir al carrito", style = MaterialTheme.typography.labelLarge)
+                }
             }
         }
     }

@@ -10,6 +10,7 @@ import com.example.gamezone.data.AppDatabase
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 /**
  * Define el estado de los campos de entrada de la pantalla de Registro.
@@ -133,11 +134,13 @@ class RegisterViewModel : ViewModel() {
 
     fun register(context: Context, onSuccess: () -> Unit) {
         if (validate()) {
-            // CORRECCIÓN APLICADA: Solo actualiza isLoading en _state.
             _state.update { it.copy(isLoading = true) }
             _errors.update { it.copy(generalError = null) } // Limpiar el error general anterior.
 
             viewModelScope.launch {
+                // Simula un retardo de 1 segundo
+                delay(1000)
+
                 val s = _state.value
                 val userDao = AppDatabase.getDatabase(context).userDao()
 
@@ -149,7 +152,6 @@ class RegisterViewModel : ViewModel() {
                     nombreUsuario = s.nombreUsuario,
                     contrasena = s.contrasena,
                     generoFavorito = s.generoFavorito
-                    // profilePhotoUri se deja como null por defecto
                 )
 
                 try {
