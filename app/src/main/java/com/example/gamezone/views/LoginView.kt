@@ -107,7 +107,7 @@ fun LoginView(
 
             // BOTÓN INGRESAR CON INDICADOR DE CARGA
             Button(
-                onClick = { vm.login(context, onLoginSuccess) }, // <<< PASAR CONTEXTO
+                onClick = { vm.login(onLoginSuccess) },
                 enabled = !state.isLoading, // <-- DESHABILITADO durante la carga
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {

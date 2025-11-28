@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import com.example.gamezone.data.AppDatabase // Importar DB
-import com.example.gamezone.SessionManager // Importar SessionManager
-import android.content.Context // Necesario para acceder a la base de datos
+import com.example.gamezone.SessionManager
+import com.example.gamezone.network.LoginRequest
+import com.example.gamezone.network.RetrofitClient
+import com.example.gamezone.network.MessageResponse
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import retrofit2.HttpException
+import com.google.gson.Gson
 
 /**
  * Representa el estado actual de la UI de Login.
@@ -25,6 +29,9 @@ class LoginViewModel : ViewModel() {
     private val _state = MutableStateFlow(LoginState())
     val state: StateFlow<LoginState> = _state
 
+    // Instancia del servicio API
+    private val apiService = RetrofitClient.instance
+
     fun onEmailOrUsernameChange(v: String) {
         _state.update { it.copy(emailOrUsername = v, loginError = null) }
     }
@@ -34,9 +41,9 @@ class LoginViewModel : ViewModel() {
     }
 
     /**
-     * Lógica de inicio de sesión asíncrona con Room.
+     * Lógica de inicio de sesión asíncrona con el Backend de Spring Boot.
      */
-    fun login(context: Context, onSuccess: () -> Unit) {
+    fun login(onSuccess: () -> Unit) {
         val currentState = _state.value
 
         // Validación de campos vacíos
@@ -45,33 +52,33 @@ class LoginViewModel : ViewModel() {
             return
         }
 
-        // Lanzar la operación de base de datos en una corrutina
         viewModelScope.launch {
-            // 1. Iniciar la carga
             _state.update { it.copy(isLoading = true, loginError = null) }
-            delay(2000) // Simulación de retardo de red/DB
+            delay(500)
 
-            val userDao = AppDatabase.getDatabase(context).userDao()
-            val identifier = currentState.emailOrUsername
+            try {
+                val request = LoginRequest(currentState.emailOrUsername, currentState.password)
 
-            // 2. Buscar usuario por email o nombre de usuario
-            val user = userDao.findUserByIdentifier(identifier)
+                // 1. Llamada a la API de Login
+                val response = apiService.login(request)
 
-            if (user == null) {
-                // Usuario no encontrado
-                _state.update { it.copy(isLoading = false, loginError = "Credenciales incorrectas. Usuario no registrado.") }
-                return@launch
-            }
-
-            // 3. Verificar contraseña
-            if (user.contrasena == currentState.password) {
-                // Éxito: Guardar sesión y notificar
-                SessionManager.currentUserId = user.id // Guardar ID de sesión
+                // 2. Éxito: Guardar sesión y notificar
+                SessionManager.currentUserId = response.id // Guardar ID retornado
                 _state.update { it.copy(isLoading = false) }
                 onSuccess()
-            } else {
-                // Error: Contraseña inválida
-                _state.update { it.copy(isLoading = false, loginError = "Contraseña incorrecta.") }
+
+            } catch (e: HttpException) {
+                // Manejo de errores 4xx (ej. 401 Unauthorized)
+                _state.update { it.copy(
+                    isLoading = false,
+                    loginError = "Credenciales incorrectas."
+                ) }
+            } catch (e: Exception) {
+                // Manejo de otros errores (ej. red, servidor caído)
+                _state.update { it.copy(
+                    isLoading = false,
+                    loginError = "Error de conexión con el servidor. Asegúrate de que el backend está corriendo en :8080."
+                ) }
             }
         }
     }

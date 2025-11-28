@@ -204,7 +204,7 @@ fun RegisterView(
                 Spacer(Modifier.height(16.dp))
                 Button(
                     onClick = {
-                        vm.register(context) { // <<< PASAR CONTEXTO
+                        vm.register { // <<< PASAR CONTEXTO
                             scope.launch {
                                 snackbarHostState.showSnackbar("¡Cuenta creada exitosamente!")
                             }
