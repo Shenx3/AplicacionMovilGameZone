@@ -11,30 +11,57 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.gamezone.viewmodels.HomeViewModel
 import com.example.gamezone.data.Product
-import com.example.gamezone.R
 import androidx.compose.material3.ExperimentalMaterial3Api
 import com.example.gamezone.viewmodels.CartViewModel
 import kotlinx.coroutines.launch
 import coil.compose.AsyncImage
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.rememberTopAppBarState
+
+// Imports para vibracion a la hora de anadir un producto al carrito
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import android.os.Vibrator
+import android.os.Build
 import kotlinx.coroutines.delay
 
-/**
- * Pantalla principal de GameZone mostrando Productos Destacados.
- */
+import android.util.Log // Verificar si el celular vibra
+
+// Función auxiliar para disparar la vibración (compatible con APIs modernas).
+private fun triggerVibration(context: Context) {
+
+    Log.d("VIBRATION_TEST", "Vibration service called successfully.")
+
+    val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        // Usar el servicio del sistema en APIs 31+
+        context.getSystemService(Vibrator::class.java)
+    } else {
+        @Suppress("DEPRECATION")
+        context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        // Usar patrón de vibración para APIs 26+ (un pulso corto de 100ms)
+        vibrator.vibrate(android.os.VibrationEffect.createOneShot(100, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+    } else {
+        @Suppress("DEPRECATION")
+        vibrator.vibrate(100)
+    }
+}
+// -------------------------------------------------------------------
+
+
+// Pantalla principal de GameZone mostrando Productos Destacados.
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeView(
@@ -45,6 +72,7 @@ fun HomeView(
     val products = vm.products.collectAsState().value
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current // <<< OBTENER CONTEXTO PARA VIBRACIÓN
 
     var hasShownSnackbar by rememberSaveable { mutableStateOf(false) }
 
@@ -119,6 +147,11 @@ fun HomeView(
                     product = product,
                     onAddToCart = {
                         cartVm.addToCart(product)
+
+                        // 1. DISPARAR VIBRACIÓN (Segundo recurso nativo)
+                        triggerVibration(context)
+
+                        // 2. Mostrar Snackbar
                         scope.launch {
                             snackbarHostState.showSnackbar("¡${product.title} añadido al carrito!")
                         }
@@ -181,7 +214,7 @@ fun ProductCard(product: Product, onAddToCart: () -> Unit) {
                 onClick = {
                     scope.launch {
                         isLoading = true
-                        onAddToCart() // Llama a la lógica original (VM + Snackbar)
+                        onAddToCart() // Llama a la lógica original (VM + Vibración + Snackbar)
                         delay(500) // Simula una carga corta
                         isLoading = false
                     }
