@@ -10,7 +10,7 @@ object RetrofitClient {
 
     // Si falla mi celular usar la ip de la maquina local
     // 10.0.2.2 es el alias de tu máquina local cuando usas el emulador de Android.
-    private const val BASE_URL = "http://10.0.2.2:8080/"
+    private const val BASE_URL = "http://192.168.100.53:8080/"
 
     // Cliente HTTP con Interceptor para debug (útil en Logcat)
     private val client = OkHttpClient.Builder()
