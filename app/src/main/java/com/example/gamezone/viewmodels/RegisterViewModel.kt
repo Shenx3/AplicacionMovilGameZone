@@ -4,8 +4,6 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import android.util.Patterns
-
 
 import com.example.gamezone.network.RetrofitClient
 import com.example.gamezone.network.RegisterRequest
@@ -33,7 +31,7 @@ data class RegisterState(
 )
 
 /**
- * Define los posibles errores para cada campo del formulario. (Se mantiene)
+ * Define los posibles errores para cada campo del formulario.
  */
 data class RegisterErrors(
     val nombreCompleto: String? = null,
@@ -58,7 +56,11 @@ class RegisterViewModel : ViewModel() {
 
     val generosVideojuego = listOf("Acción", "Aventura", "RPG", "Shooter", "Deportes", "Estrategia")
 
-    // MANEJADORES DE CAMBIOS (UPDATERS) y VALIDATE()
+    // Regex estándar para evitar el crash de Android Patterns en el JVM
+    private val EMAIL_REGEX = "[a-zA-Z0-9\\+\\.\\_\\%\\-\\+]{1,256}\\@[a-zA-Z0-9][a-zA-Z0-9\\-]{0,64}(\\.[a-zA-Z0-9][a-zA-Z0-9\\-]{0,25})+"
+
+
+    // MANEJADORES DE CAMBIOS (UPDATERS)
 
     fun onNombreChange(v: String) { _state.update { it.copy(nombreCompleto = v) } }
     fun onEmailChange(v: String) { _state.update { it.copy(email = v) } }
@@ -70,7 +72,7 @@ class RegisterViewModel : ViewModel() {
     fun onTerminosChange(v: Boolean) { _state.update { it.copy(aceptaTerminos = v) } }
 
     /**
-     * Valida todos los campos del formulario. (Lógica se mantiene)
+     * Valida todos los campos del formulario. (Lógica de los tests)
      */
     fun validate(): Boolean {
         val s = _state.value
@@ -78,20 +80,36 @@ class RegisterViewModel : ViewModel() {
 
         val contrasenaRegex = Regex("^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=\\S+\$).{8,}")
 
-        // Simplemente asegurando que las validaciones estén completas para el scope del ViewModel
+        // 1. Nombre Completo
         currentErrors = if (s.nombreCompleto.length < 3) currentErrors.copy(nombreCompleto = "El nombre debe tener al menos 3 caracteres.") else currentErrors.copy(nombreCompleto = null)
-        currentErrors = when { s.email.isBlank() -> currentErrors.copy(email = "El correo electrónico es obligatorio.")
-            !Patterns.EMAIL_ADDRESS.matcher(s.email).matches() -> currentErrors.copy(email = "Email inválido.")
-            else -> currentErrors.copy(email = null) }
+
+        // 2. Email
+        currentErrors = when {
+            s.email.isBlank() -> currentErrors.copy(email = "El correo electrónico es obligatorio.")
+            !s.email.matches(EMAIL_REGEX.toRegex()) -> currentErrors.copy(email = "Email inválido.") // <-- CORRECCIÓN
+            else -> currentErrors.copy(email = null)
+        }
+
+        // 3. Nombre de Usuario
         currentErrors = when { s.nombreUsuario.length !in 3..20 -> currentErrors.copy(nombreUsuario = "Debe tener entre 3 y 20 caracteres.")
             else -> currentErrors.copy(nombreUsuario = null) }
-        currentErrors = when { s.contrasena.length < 8 -> currentErrors.copy(contrasena = "Mínimo 8 caracteres.")
+
+        // 4. Contraseña
+        currentErrors = when {
+            s.contrasena.length < 8 -> currentErrors.copy(contrasena = "Mínimo 8 caracteres.")
             !s.contrasena.matches(contrasenaRegex) -> currentErrors.copy(contrasena = "Debe incluir mayúscula, minúscula y número.")
-            else -> currentErrors.copy(contrasena = null) }
+            else -> currentErrors.copy(contrasena = null)
+        }
+
+        // 5. Confirmar Contraseña
         currentErrors = when { s.confirmarContrasena.isBlank() -> currentErrors.copy(confirmarContrasena = "Confirma la contraseña.")
             s.contrasena != s.confirmarContrasena -> currentErrors.copy(confirmarContrasena = "Las contraseñas no coinciden.")
             else -> currentErrors.copy(confirmarContrasena = null) }
+
+        // 6. Preferencia (Género)
         currentErrors = if (s.generoFavorito.isBlank()) currentErrors.copy(generoFavorito = "Selecciona un género favorito.") else currentErrors.copy(generoFavorito = null)
+
+        // 7. Términos y Condiciones
         currentErrors = if (!s.aceptaTerminos) currentErrors.copy(aceptaTerminos = "Debes aceptar los Términos y Política de Privacidad.") else currentErrors.copy(aceptaTerminos = null)
 
         _errors.value = currentErrors
@@ -134,7 +152,6 @@ class RegisterViewModel : ViewModel() {
                         // 3. Manejo de error HTTP (ej. 400 Bad Request por email/usuario ya existente)
                         val errorBody = response.errorBody()?.string()
                         val errorMsg = try {
-                            // Intenta parsear la respuesta del backend para el mensaje de error
                             Gson().fromJson(errorBody, MessageResponse::class.java).message
                         } catch (e: Exception) {
                             "Error desconocido. Revisa el email y usuario."
