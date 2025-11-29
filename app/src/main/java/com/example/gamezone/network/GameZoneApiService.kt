@@ -37,4 +37,7 @@ interface GameZoneApiService {
 
     @PUT("api/users/{userId}/photo")
     suspend fun updateProfilePhoto(@Path("userId") userId: Long, @Body photoData: Map<String, String>): Response<MessageResponse>
+
+    @DELETE("api/users/{userId}")
+    suspend fun deleteUser(@Path("userId") userId: Long): Response<MessageResponse>
 }
