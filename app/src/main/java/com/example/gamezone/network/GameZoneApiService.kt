@@ -5,7 +5,7 @@ import com.example.gamezone.data.User
 import retrofit2.Response
 import retrofit2.http.*
 
-// --- DTOs del lado del móvil (deben coincidir con el Backend) ---
+// DTOs del lado del móvil
 data class LoginRequest(val identifier: String, val contrasena: String)
 data class LoginResponse(val id: Long, val nombreUsuario: String)
 data class RegisterRequest(
