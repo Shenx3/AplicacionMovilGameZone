@@ -7,23 +7,49 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-    // 192.168.100.53:8080 Celular fisico
-    // 10.0.2.2:8080 es el alias de tu máquina local cuando usas el emulador de Android.
-    private const val BASE_URL = "http://192.168.100.53:8080/"
+    private var BASE_URL = "http://192.168.100.53:8080/"
 
-    // Cliente HTTP con Interceptor para debug (útil en Logcat)
+    // Cliente HTTP
     private val client = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(10, TimeUnit.SECONDS) // 10s
+        .readTimeout(10, TimeUnit.SECONDS)    // 10s
         .build()
 
-    val instance: GameZoneApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
+    private fun buildRetrofitInstance(baseUrl: String): GameZoneApiService {
+        return Retrofit.Builder()
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(GameZoneApiService::class.java)
+    }
+
+    @Volatile
+    private var _instance: GameZoneApiService = buildRetrofitInstance(BASE_URL)
+
+    val instance: GameZoneApiService
+        get() = _instance
+
+    val currentBaseUrl: String
+        get() = BASE_URL
+
+
+    // Actualiza la URL base y reconstruye la instancia de GameZoneApiService.
+
+    fun updateBaseUrl(newIpAndPort: String) {
+        val newUrl = if (newIpAndPort.startsWith("http", ignoreCase = true)) {
+            newIpAndPort
+        } else {
+            "http://$newIpAndPort"
+        }
+        val finalUrl = if (newUrl.endsWith("/")) newUrl else "$newUrl/"
+
+        if (BASE_URL != finalUrl) {
+            BASE_URL = finalUrl
+            synchronized(this) {
+                _instance = buildRetrofitInstance(BASE_URL)
+            }
+        }
     }
 }

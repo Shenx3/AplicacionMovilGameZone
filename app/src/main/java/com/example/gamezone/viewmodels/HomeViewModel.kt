@@ -12,6 +12,7 @@ import com.example.gamezone.SessionManager
 import com.example.gamezone.network.RetrofitClient
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import android.util.Log
 
 // Data Class para exponer la información del usuario logueado
 data class UserProfile(
@@ -47,14 +48,16 @@ class HomeViewModel : ViewModel() {
                 val productList = apiService.getProducts()
                 _products.value = productList
             } catch (e: Exception) {
+                // error específico en Logcat
+                Log.e("HomeViewModel", "Error al cargar productos: ${e.message}", e)
                 _products.value = emptyList()
             }
         }
     }
 
-    /**
-     * Carga el perfil del usuario (incluyendo la foto) desde el Backend.
-     */
+
+    // Carga el perfil del usuario (incluyendo la foto) desde el Backend.
+
     fun loadProfile(context: Context) {
         viewModelScope.launch {
             val userId = SessionManager.currentUserId
@@ -71,6 +74,8 @@ class HomeViewModel : ViewModel() {
                     // Convertir la String Uri del Backend a Uri para mostrar
                     _photoUri.value = user.profilePhotoUri?.toUri()
                 } catch (e: Exception) {
+                    // error específico en Logcat
+                    Log.e("HomeViewModel", "Error al cargar perfil del usuario $userId: ${e.message}", e)
                     _userProfile.value = UserProfile("Error", "Error al cargar perfil (Revisa el Backend)")
                     _photoUri.value = null
                 }
@@ -81,9 +86,9 @@ class HomeViewModel : ViewModel() {
         }
     }
 
-    /**
-     * Guarda la Uri de la foto enviándola al backend.
-     */
+
+    // Guarda la Uri de la foto enviándola al backend.
+
     suspend fun setPhotoUri(context: Context, uri: Uri?) {
         val userId = SessionManager.currentUserId
         if (userId != null) {
@@ -94,13 +99,14 @@ class HomeViewModel : ViewModel() {
                 _photoUri.value = uri // Actualizar en ViewModel local
             } catch (e: Exception) {
                 // Manejo de errores de red o backend
+                Log.e("HomeViewModel", "Error al actualizar foto de perfil: ${e.message}", e)
             }
         }
     }
 
-    /**
-     * Cierra la sesión del usuario.
-     */
+
+     // Cierra la sesión del usuario.
+
     fun logout() {
         SessionManager.currentUserId = null // Limpiar el ID de la sesión
     }

@@ -15,9 +15,8 @@ import kotlinx.coroutines.launch
 import retrofit2.HttpException
 import com.google.gson.Gson
 
-/**
- * Representa el estado actual de la UI de Login.
- */
+
+// Representa el estado actual de la UI de Login.
 data class LoginState(
     val emailOrUsername: String = "",
     val password: String = "",
@@ -40,45 +39,58 @@ class LoginViewModel : ViewModel() {
         _state.update { it.copy(password = v, loginError = null) }
     }
 
-    /**
-     * Lógica de inicio de sesión asíncrona con el Backend de Spring Boot.
-     */
-    fun login(onSuccess: () -> Unit) {
-        val currentState = _state.value
 
-        // Validación de campos vacíos
-        if (currentState.emailOrUsername.isBlank() || currentState.password.isBlank()) {
-            _state.update { it.copy(loginError = "Por favor, ingresa correo/usuario y contraseña.") }
-            return
-        }
+    // Lógica de inicio de sesión asíncrona con el Backend de Spring Boot.
+
+    fun login(onLoginSuccess: () -> Unit) {
+        // 1. Validación de campos (asumida)
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, loginError = null) }
-            delay(500)
+
+            // Obtener la instancia actual de la API aquí
+            val apiService = RetrofitClient.instance
+
+
+            val request = LoginRequest(
+                identifier = state.value.emailOrUsername,
+                contrasena = state.value.password
+            )
 
             try {
-                val request = LoginRequest(currentState.emailOrUsername, currentState.password)
-
-                // 1. Llamada a la API de Login
+                // 2. Usar la instancia obtenida
                 val response = apiService.login(request)
 
-                // 2. Éxito: Guardar sesión y notificar
-                SessionManager.currentUserId = response.id // Guardar ID retornado
+                // Éxito:
+                SessionManager.currentUserId = response.id
                 _state.update { it.copy(isLoading = false) }
-                onSuccess()
+                onLoginSuccess()
 
             } catch (e: HttpException) {
-                // Manejo de errores 4xx (ej. 401 Unauthorized)
-                _state.update { it.copy(
-                    isLoading = false,
-                    loginError = "Credenciales incorrectas."
-                ) }
+                // Manejo de errores 4xx (asumido)
+                if (e.code() == 401) {
+                    _state.update {
+                        it.copy(
+                            loginError = "Credenciales inválidas. Intenta de nuevo.",
+                            isLoading = false
+                        )
+                    }
+                } else {
+                    _state.update {
+                        it.copy(
+                            loginError = "Error en el servidor: HTTP ${e.code()}.",
+                            isLoading = false
+                        )
+                    }
+                }
             } catch (e: Exception) {
-                // Manejo de otros errores (ej. red, servidor caído)
-                _state.update { it.copy(
-                    isLoading = false,
-                    loginError = "Error de conexión con el servidor. Asegúrate de que el backend está corriendo en :8080."
-                ) }
+                // Manejo de errores de red (IP incorrecta, backend caído, etc.)
+                val errorMessage = if (e is java.net.ConnectException) {
+                    "No se pudo conectar al servidor. Verifica la IP: ${RetrofitClient.currentBaseUrl}"
+                } else {
+                    "Error de conexión: ${e.message}"
+                }
+                _state.update { it.copy(loginError = errorMessage, isLoading = false) }
             }
         }
     }
