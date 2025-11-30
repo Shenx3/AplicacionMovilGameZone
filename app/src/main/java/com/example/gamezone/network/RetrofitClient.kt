@@ -7,6 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
+    // 10.0.2.2 local
     private var BASE_URL = "http://192.168.100.53:8080/"
 
     // Cliente HTTP
